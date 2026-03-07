@@ -1,0 +1,11 @@
+transformers==4.57.3
+accelerate==1.12.0
+fastapi==0.135.1
+uvicorn==0.41.0
+librosa
+soundfile
+torchaudio
+sox
+onnxruntime==1.23.2
+einops
+numpy

@@ -1,0 +1,12 @@
+*
+!jetson-vllm-omni-requirements.txt
+!vllm-omni/
+
+vllm-omni/.git
+vllm-omni/.github
+vllm-omni/docs
+vllm-omni/examples
+vllm-omni/tests
+vllm-omni/benchmarks
+vllm-omni/vllm_omni.egg-info
+vllm-omni/**/__pycache__

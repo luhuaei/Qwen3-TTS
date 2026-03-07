@@ -7,10 +7,9 @@ name = "qwen-tts"
 version = "0.1.1"
 description = "Qwen-TTS python package"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -27,8 +26,10 @@ dependencies = [
   "torchaudio",
   "soundfile",
   "sox",
-  "onnxruntime",
+  "onnxruntime==1.23.2",
   "einops",
+  "fastapi==0.135.1",
+  "uvicorn==0.41.0",
 ]
 
 [project.urls]
@@ -37,6 +38,7 @@ Repository = "https://github.com/Qwen/Qwen3-TTS"
 
 [project.scripts]
 qwen-tts-demo = "qwen_tts.cli.demo:main"
+qwen-tts-api = "qwen_tts.api.openai_speech_server:main"
 
 [tool.setuptools]
 packages = { find = { where = ["."] , include = ["qwen_tts*"] } }
@@ -44,3 +46,8 @@ include-package-data = true
 
 [tool.setuptools.package-data]
 qwen_tts = ["py.typed", "**/*.npz"]
+[dependency-groups]
+benchmark = [
+  "modelscope",
+]
+
