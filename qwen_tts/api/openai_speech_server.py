@@ -18,6 +18,7 @@ import soundfile as sf
 import torch
 import uvicorn
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -54,6 +55,12 @@ class ServerSettings:
     segment_mode: str
     max_new_tokens: int | None
     voice_map: dict[str, str]
+    cors_allow_origins: list[str]
+    cors_allow_origin_regex: str | None
+    cors_allow_methods: list[str]
+    cors_allow_headers: list[str]
+    cors_expose_headers: list[str]
+    cors_allow_credentials: bool
 
 
 class OpenAISpeechRequest(BaseModel):
@@ -328,6 +335,14 @@ def _env_int(name: str, default: int) -> int:
     return int(raw)
 
 
+def _env_csv(name: str, default: list[str]) -> list[str]:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default.copy()
+    values = [item.strip() for item in raw.split(",") if item.strip()]
+    return values or default.copy()
+
+
 def load_settings() -> ServerSettings:
     voice_map_raw = os.environ.get("QWEN_TTS_VOICE_MAP_JSON", "")
     voice_map = json.loads(voice_map_raw) if voice_map_raw.strip() else {}
@@ -351,6 +366,19 @@ def load_settings() -> ServerSettings:
         segment_mode=os.environ.get("QWEN_TTS_SEGMENT_MODE", "sentence"),
         max_new_tokens=int(os.environ["QWEN_TTS_MAX_NEW_TOKENS"]) if os.environ.get("QWEN_TTS_MAX_NEW_TOKENS") else None,
         voice_map={str(key): str(value) for key, value in voice_map.items()},
+        cors_allow_origins=_env_csv("QWEN_TTS_CORS_ALLOW_ORIGINS", ["*"]),
+        cors_allow_origin_regex=os.environ.get("QWEN_TTS_CORS_ALLOW_ORIGIN_REGEX") or None,
+        cors_allow_methods=_env_csv("QWEN_TTS_CORS_ALLOW_METHODS", ["*"]),
+        cors_allow_headers=_env_csv("QWEN_TTS_CORS_ALLOW_HEADERS", ["*"]),
+        cors_expose_headers=_env_csv(
+            "QWEN_TTS_CORS_EXPOSE_HEADERS",
+            [
+                "X-Qwen-TTS-Segment-Count",
+                "X-Qwen-TTS-Batch-Concurrency",
+                "X-Qwen-TTS-Audio-Seconds",
+            ],
+        ),
+        cors_allow_credentials=_env_bool("QWEN_TTS_CORS_ALLOW_CREDENTIALS", False),
     )
 
 
@@ -359,6 +387,15 @@ def create_app() -> FastAPI:
     service = TTSService(settings)
     app = FastAPI(title="Qwen-TTS OpenAI-Compatible API", version="0.1.0")
     app.state.service = service
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_allow_origins,
+        allow_origin_regex=settings.cors_allow_origin_regex,
+        allow_methods=settings.cors_allow_methods,
+        allow_headers=settings.cors_allow_headers,
+        expose_headers=settings.cors_expose_headers,
+        allow_credentials=settings.cors_allow_credentials,
+    )
 
     @app.get("/healthz")
     async def healthz() -> JSONResponse:

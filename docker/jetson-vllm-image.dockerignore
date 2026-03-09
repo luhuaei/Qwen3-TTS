@@ -1,12 +1,13 @@
 *
 !jetson-vllm-omni-requirements.txt
 !vllm-omni/
+!vllm_qwen3_tts_jetson_stage_config.yaml
+!jetson-vllm-entrypoint.sh
 
 vllm-omni/.git
 vllm-omni/.github
 vllm-omni/docs
 vllm-omni/examples
 vllm-omni/tests
-vllm-omni/benchmarks
 vllm-omni/vllm_omni.egg-info
 vllm-omni/**/__pycache__

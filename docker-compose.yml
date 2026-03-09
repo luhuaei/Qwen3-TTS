@@ -1,0 +1,36 @@
+services:
+  qwen3-tts:
+    image: qwen3-tts-vllm-jetson:latest
+    container_name: qwen3-tts-1
+    runtime: nvidia
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${LZC_SERVICE_ID:-qwen-tts}-qwen3-tts.rule=Host(`qwen3-tts-ai`)"
+      - "traefik.http.services.${LZC_SERVICE_ID:-qwen-tts}-qwen3-tts.loadbalancer.server.port=8000"
+    expose:
+      - "8000"
+    environment:
+      - MODEL_NAME=/workspace/models/Qwen3-TTS-12Hz-0.6B-CustomVoice
+      - VLLM_SERVED_MODEL_NAME=Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice
+      - VLLM_HOST=0.0.0.0
+      - VLLM_PORT=8000
+      - VLLM_STAGE_CONFIG_PATH=/opt/vllm-omni/stage_configs/qwen3_tts_jetson.yaml
+      - HF_HUB_OFFLINE=1
+      - TRANSFORMERS_OFFLINE=1
+      - HF_DATASETS_OFFLINE=1
+      - TOKENIZERS_PARALLELISM=false
+      - OMP_NUM_THREADS=1
+    volumes:
+      - /home/nvidia/qwen3-tts-bench:/workspace
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/v1/audio/voices', timeout=5).read()"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 30s
+
+networks:
+  default:
+    external: true
+    name: traefik-shared-network

@@ -16,15 +16,19 @@ RUN apt-get update \
 
 COPY jetson-vllm-omni-requirements.txt /tmp/jetson-vllm-omni-requirements.txt
 
-RUN uv venv "${VLLM_OMNI_VENV}" --python 3.10 --system-site-packages \
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv venv "${VLLM_OMNI_VENV}" --python 3.10 --system-site-packages \
     && uv pip install --python "${VLLM_OMNI_VENV}/bin/python3" -r /tmp/jetson-vllm-omni-requirements.txt \
-    && rm -rf /root/.cache/uv
+    && uv pip install --python "${VLLM_OMNI_VENV}/bin/python3" flash-attn -i http://wa.lan:10608/simple --trusted-host wa.lan
 
 COPY vllm-omni /opt/vllm-omni
+COPY vllm_qwen3_tts_jetson_stage_config.yaml /opt/vllm-omni/stage_configs/qwen3_tts_jetson.yaml
+COPY jetson-vllm-entrypoint.sh /usr/local/bin/jetson-vllm-entrypoint.sh
 
-RUN uv pip install --python "${VLLM_OMNI_VENV}/bin/python3" -e /opt/vllm-omni --no-deps --no-build-isolation \
-    && rm -rf /root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --python "${VLLM_OMNI_VENV}/bin/python3" -e /opt/vllm-omni --no-deps --no-build-isolation \
     && find /opt/vllm-omni -name '__pycache__' -type d -prune -exec rm -rf '{}' +
 
 WORKDIR /workspace
-ENTRYPOINT ["/bin/bash", "-lc"]
+EXPOSE 8091
+ENTRYPOINT ["/usr/local/bin/jetson-vllm-entrypoint.sh"]

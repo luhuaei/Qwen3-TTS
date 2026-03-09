@@ -22,5 +22,6 @@ wheels/
 .vscode/
 venv/
 env/
+.cache/
 benchmarks
 models
